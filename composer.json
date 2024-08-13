@@ -1,5 +1,5 @@
 {
-    "name": "tobiasz/ps-file-cache",
+    "name": "arkonsoft/ps-file-cache",
     "description": "Simple to file caching library",
     "type": "library",
     "license": "MIT",
