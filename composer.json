@@ -2,6 +2,10 @@
     "name": "tobiasz/ps-file-cache",
     "description": "Simple to file caching library",
     "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">= 7.0"
+    },
     "authors": [
         {
             "name": "Tobiasz Klusek",
@@ -9,5 +13,9 @@
         }
     ],
     "minimum-stability": "stable",
-    "require": {}
+    "autoload": {
+        "psr-4": {
+            "Arkonsoft\\PsModule\\FileCache\\": ""
+        }
+    }
 }
