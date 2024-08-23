@@ -28,11 +28,17 @@ class FileCache
     private $cache_path;
 
     /**
+     * @var int $ttl Time to live in seconds
+     */
+    private $ttl;
+
+    /**
      * @param string $cache_path Path to the cache directory
      */
     public function __construct(string $cache_path)
     {
         $this->cache_path = $cache_path;
+        $this->ttl = 3600;
     }
 
     /**
@@ -51,10 +57,10 @@ class FileCache
     /**
      * Check whether the cache file is expired over the specified time difference
      * @param string $key Cache key
-     * @param int $time_diff Time difference in seconds
-     * @return bool True if the cache file is expired, file failed to open or cannot acquire file time, false otherwise
+     * @param int $time_diff Time difference in seconds, uses the defined ttl if not specified
+     * @return bool True if the cache file is expired, false when failed to open file or cannot acquire file time and if cache is not expired yet
      */
-    public function isExpired(string $key, int $time_diff = 3600): bool
+    public function isExpired(string $key, int $time_diff = 0): bool
     {
         if(!file_exists($this->cache_path . $key . '.txt')){
             return false;
@@ -68,6 +74,10 @@ class FileCache
         $now = time();
         $diff = $now - $filetime;
 
+        if($time_diff == 0){
+            $time_diff = $this->ttl;
+        }
+
         if($diff > $time_diff){
             return true;
         }
@@ -78,32 +88,50 @@ class FileCache
      * Retrieve the cache value
      * In case of objects/arrays remember to json_decode it after retrieving
      * @param string $key Cache key
-     * @return string|false Cache value if the cache file exists and is not empty, false otherwise
+     * @param bool $check_expiration Check whether the cache file is expired
+     * @return string|false Cache value if the cache file exists, is not expired (based on defined ttl) and is not empty, false otherwise
      */
-    public function retrieve(string $key)
+    public function retrieve(string $key, bool $check_expiration = true)
     {
-        if (!empty($this->isStored($this->cache_path . $key . '.txt'))) {
+        if (!empty($this->isStored($this->cache_path . $key . '.txt')) || ($this->isExpired($this->cache_path . $key . '.txt', $this->ttl) && $check_expiration)) {
             return false;
         }
 
-        return file_get_contents($this->cache_path . $key . '.txt');
+        return json_decode(file_get_contents($this->cache_path . $key . '.txt'));
     }
 
     /**
      * Store the cache value
      * In case of objects/arrays remember to json_encode it before storing
      * @param string $key Cache key
-     * @param string $value Cache value
+     * @param mixed $value Cache value (any type beside resource)
      * @return false|int False if the cache file cannot be opened, int if the cache value is successfully stored
+     * @throws \InvalidArgumentException If the value is a resource
      */
-    public function store(string $key, string $value): bool
+    public function store(string $key, $value): bool
     {
+        if(gettype($value) == 'resource'){
+            throw new \InvalidArgumentException('Resource type is not allowed');
+        }
+
         $fp = fopen($this->cache_path . $key . '.txt', 'w');
+
+        $value = json_encode($value);
 
         if (!$fp) {
             return false;
         }
 
         return fwrite($fp, $value, strlen($value)) && fclose($fp);
+    }
+
+    /**
+     * Set ttl
+     * @param int $ttl
+     * @return void
+     */
+    public function setTimeout(int $ttl)
+    {
+        $this->ttl = $ttl;
     }
 }
