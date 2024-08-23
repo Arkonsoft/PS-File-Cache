@@ -4,7 +4,7 @@ A simple file cache for PHP
 
 ## Installation
 
-```composer install arkonsoft/ps-file-cache```
+```composer require arkonsoft/ps-file-cache```
 
 ## Usage
 
